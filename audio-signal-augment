@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+import argparse
+from audio_signal_augment import AudioPreprocessor, defopts
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Adjust audio signal amplitude above noise floor for speech-to-text data generation."
+    )
+
+    parser.add_argument('-i', '--input', type=str, help="Path to the input audio file (WAV format).")
+    parser.add_argument('-o', '--output', type=str, help="Path to save the processed output audio file.")
+
+    parser.add_argument(
+        '-w', '--win_nfloor_s', 
+        type=float, 
+        default=defopts["win_nfloor_s"], 
+        help=f"Window size for noise floor analysis in seconds (default: {defopts['win_nfloor_s']})"
+    )
+    parser.add_argument(
+        '-s', '--win_skip_s', 
+        type=float, 
+        default=defopts["win_skip_s"], 
+        help=f"Window skip size in seconds (default: {defopts['win_skip_s']})"
+    )
+    parser.add_argument(
+        '-f', '--nfloor_max_frac', 
+        type=float, 
+        default=defopts["nfloor_max_frac"], 
+        help=f"Fraction of max amplitude as noise floor threshold (default: {defopts['nfloor_max_frac']})"
+    )
+    parser.add_argument(
+        '-t', '--smooth_amp_frac', 
+        type=float, 
+        default=defopts["smooth_amp_frac"], 
+        help=f"Amplitude fraction for smooth transition near noise floor (default: {defopts['smooth_amp_frac']})"
+    )
+    parser.add_argument(
+        '-a', '--amplitude_adjust_range', 
+        type=float, 
+        nargs=2, 
+        default=defopts["amplitude_adjust_range"], 
+        help=f"Range for random amplitude adjustment multiplier (default: {defopts['amplitude_adjust_range']})"
+    )
+    args = parser.parse_args()
+
+    processor = AudioPreprocessor(
+        win_nfloor_s=args.win_nfloor_s,
+        win_skip_s=args.win_skip_s,
+        nfloor_max_frac=args.nfloor_max_frac,
+        smooth_amp_frac=args.smooth_amp_frac,
+        amplitude_adjust_range=args.amplitude_adjust_range
+    )
+
+    # Run the preprocessing and save output
+    nfloor_amp, max_amp = processor.preprocess(args.input, args.output)
+
+    # Print summary of processing
+    print(f"Processing complete.")
+    print(f"Noise floor amplitude: {nfloor_amp}")
+    print(f"Max amplitude: {max_amp}")
+    print(f"Output saved to {args.output}")
+
+if __name__ == "__main__":
+    main()
